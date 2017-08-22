@@ -41,7 +41,6 @@ Article.loadAll = function(rawData) {
   rawData.forEach(function(ele) {
     Article.all.push(new Article(ele));
   })
-  console.log("TEST!");
 }
 
 // This function will retrieve the data from either a local or remote source,
@@ -54,18 +53,17 @@ Article.fetchAll = function() {
       type : 'HEAD',
       success : function(data, status, xhr){
         const localEtag = localStorage.etag;
-        const remoteEtag = xhr.getAllResponseHeaders().split('\n').map((el) => el.split(':')).filter(el => el[0] === 'etag')[0][1];
-        // console.log(xhr.getAllResponseHeaders().split('\n').map((el) => el.split(':')).filter(el => el[0] === 'etag')[0][1]);
+        const remoteEtag = xhr.getResponseHeader('eTag');
         console.log(`localEtag = ${localEtag}`);
         console.log(`remoteEtag = ${remoteEtag}`);
+
         if(!(localEtag === remoteEtag)) {
           // Get current data
           $.getJSON('data/hackerIpsum.json').then(
             function(data, status, xhr){
               Article.loadAll(data);
               localStorage.rawData = JSON.stringify(data);
-              localStorage.etag = xhr.getAllResponseHeaders().split('\n').map((el) => el.split(':')).filter(el => el[0] === 'etag')[0][1];
-              Article.all.forEach((el) => (el.toHtml()));
+              localStorage.etag = xhr.getResponseHeader('eTag');
               articleView.initIndexPage();
             },
             function(error){
@@ -75,7 +73,6 @@ Article.fetchAll = function() {
         } else {
           Article.loadAll(JSON.parse(localStorage.rawData)); //TODO: DONE What do we pass in to loadAll()?
           //TODO: DONE What method do we call to render the index page
-          Article.all.forEach((el) => (el.toHtml()));
           articleView.initIndexPage();
         }
       },
@@ -86,7 +83,6 @@ Article.fetchAll = function() {
     // When rawData is already in localStorage,
     // we can load it with the .loadAll function above,
     // and then render the index page (using the proper method on the articleView object).
-    Article.all.forEach((el) => (el.toHtml()));
     articleView.initIndexPage();
   } else {
     // TODO: DONE When we don't already have the rawData,
@@ -98,8 +94,7 @@ Article.fetchAll = function() {
       function(data, status, xhr){
         Article.loadAll(data);
         localStorage.rawData = JSON.stringify(data);
-        localStorage.etag = xhr.getAllResponseHeaders().split('\n').map((el) => el.split(':')).filter(el => el[0] === 'etag')[0][1];
-        Article.all.forEach((el) => (el.toHtml()));
+        localStorage.etag = xhr.getResponseHeader('eTag');
         articleView.initIndexPage();
       },
       function(error){
